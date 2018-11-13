@@ -1,0 +1,104 @@
+make -C /lib/modules/`uname -r`/build M=$PWD modules
+make[1]: Entering directory '/usr/src/linux-headers-4.4.0-101-generic'
+  CC [M]  /home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.o
+/home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.c: In function ‘init_ib’:
+/home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.c:126:36: warning: assignment from incompatible pointer type [-Wincompatible-pointer-types]
+     rdma_ib_device.ibclient.remove = remove_device;
+                                    ^
+/home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.c: In function ‘receive_data’:
+/home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.c:230:8: error: ‘struct msghdr’ has no member named ‘msg_iov’
+     msg.msg_iov = &iov;
+        ^
+/home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.c:231:8: error: ‘struct msghdr’ has no member named ‘msg_iovlen’
+     msg.msg_iovlen = 1;
+        ^
+/home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.c:235:8: error: ‘struct msghdr’ has no member named ‘msg_iov’
+     msg.msg_iov->iov_base= data;
+        ^
+/home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.c:236:8: error: ‘struct msghdr’ has no member named ‘msg_iov’
+     msg.msg_iov->iov_len = size;
+        ^
+/home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.c:243:14: error: too many arguments to function ‘sock_recvmsg’
+     retval = sock_recvmsg(ctx->sock, &msg, size, 0);
+              ^
+In file included from include/linux/skbuff.h:29:0,
+                 from include/linux/if_arp.h:26,
+                 from include/rdma/ib_addr.h:39,
+                 from include/rdma/rdma_cm.h:39,
+                 from /home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.h:10,
+                 from /home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.c:1:
+include/linux/net.h:220:5: note: declared here
+ int sock_recvmsg(struct socket *sock, struct msghdr *msg, int flags);
+     ^
+/home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.c: In function ‘send_data’:
+/home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.c:260:8: error: ‘struct msghdr’ has no member named ‘msg_iov’
+     msg.msg_iov      = &iov;
+        ^
+/home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.c:261:8: error: ‘struct msghdr’ has no member named ‘msg_iovlen’
+     msg.msg_iovlen   = 1;
+        ^
+/home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.c:265:8: error: ‘struct msghdr’ has no member named ‘msg_iov’
+     msg.msg_iov->iov_len = size;
+        ^
+/home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.c:266:8: error: ‘struct msghdr’ has no member named ‘msg_iov’
+     msg.msg_iov->iov_base = data;
+        ^
+/home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.c:272:14: error: too many arguments to function ‘sock_sendmsg’
+     retval = sock_sendmsg(ctx->sock, &msg, size);
+              ^
+In file included from include/linux/skbuff.h:29:0,
+                 from include/linux/if_arp.h:26,
+                 from include/rdma/ib_addr.h:39,
+                 from include/rdma/rdma_cm.h:39,
+                 from /home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.h:10,
+                 from /home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.c:1:
+include/linux/net.h:219:5: note: declared here
+ int sock_sendmsg(struct socket *sock, struct msghdr *msg);
+     ^
+/home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.c: In function ‘rdma_init’:
+/home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.c:491:60: warning: passing argument 5 of ‘ib_create_cq’ makes pointer from integer without a cast [-Wint-conversion]
+             comp_handler_send, cq_event_handler_send, ctx, 10, 0);
+                                                            ^
+In file included from /home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.h:9:0,
+                 from /home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.c:1:
+include/rdma/ib_verbs.h:2470:15: note: expected ‘const struct ib_cq_init_attr *’ but argument is of type ‘int’
+ struct ib_cq *ib_create_cq(struct ib_device *device,
+               ^
+/home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.c:490:20: error: too many arguments to function ‘ib_create_cq’
+     ctx->send_cq = ib_create_cq(rdma_ib_device.dev, 
+                    ^
+In file included from /home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.h:9:0,
+                 from /home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.c:1:
+include/rdma/ib_verbs.h:2470:15: note: declared here
+ struct ib_cq *ib_create_cq(struct ib_device *device,
+               ^
+/home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.c:493:60: warning: passing argument 5 of ‘ib_create_cq’ makes pointer from integer without a cast [-Wint-conversion]
+             comp_handler_recv, cq_event_handler_recv, ctx, 10, 0);
+                                                            ^
+In file included from /home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.h:9:0,
+                 from /home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.c:1:
+include/rdma/ib_verbs.h:2470:15: note: expected ‘const struct ib_cq_init_attr *’ but argument is of type ‘int’
+ struct ib_cq *ib_create_cq(struct ib_device *device,
+               ^
+/home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.c:492:20: error: too many arguments to function ‘ib_create_cq’
+     ctx->recv_cq = ib_create_cq(rdma_ib_device.dev, 
+                    ^
+In file included from /home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.h:9:0,
+                 from /home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.c:1:
+include/rdma/ib_verbs.h:2470:15: note: declared here
+ struct ib_cq *ib_create_cq(struct ib_device *device,
+               ^
+/home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.c: In function ‘build_wr’:
+/home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.c:570:7: error: ‘struct ib_send_wr’ has no member named ‘wr’
+     wr.wr.rdma.remote_addr = ctx->rem_vaddr + remote_offset;
+       ^
+/home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.c:571:7: error: ‘struct ib_send_wr’ has no member named ‘wr’
+     wr.wr.rdma.rkey        = ctx->rem_rkey;
+       ^
+scripts/Makefile.build:258: recipe for target '/home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.o' failed
+make[2]: *** [/home/arvind/Documents/disag-firebox/rdma_client_library/rdma_library.o] Error 1
+Makefile:1423: recipe for target '_module_/home/arvind/Documents/disag-firebox/rdma_client_library' failed
+make[1]: *** [_module_/home/arvind/Documents/disag-firebox/rdma_client_library] Error 2
+make[1]: Leaving directory '/usr/src/linux-headers-4.4.0-101-generic'
+Makefile:11: recipe for target 'default' failed
+make: *** [default] Error 2
