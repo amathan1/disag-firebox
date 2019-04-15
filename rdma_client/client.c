@@ -268,17 +268,8 @@ static void send_data(char* data, int size) {
     
     printk(KERN_INFO "Exchanging data\n");
     nr_segments = 1; count = 1;
-    // msg.msg_name     = 0;
-    // msg.msg_namelen  = 0;
-    // msg.msg_iov      = &iov;
-    // msg.msg_iovlen   = 1;
-    // msg.msg_control  = NULL;
-    // msg.msg_controllen = 0;
-    // msg.msg_flags    = 0;
     iov.iov_len = size;
     iov.iov_base = data;
-    //msg.msg_iter.iov->iov_len = size;
-    //msg.msg_iter.iov->iov_base = data;
 
     iov_iter_init(&(msg.msg_iter), READ, &iov, nr_segments, count);
 
@@ -294,29 +285,22 @@ static void send_data(char* data, int size) {
 static void receive_data(char* data, int size) {
     struct msghdr msg;
     struct iovec iov;
-    int retval;
+    int retval, nr_segments, count;
     mm_segment_t oldfs;
     
     printk(KERN_INFO "receive_data\n");
-    
-    msg.msg_name = 0;
-    msg.msg_namelen = 0;
-    //msg.msg_name = &servaddr;
-    //msg.msg_namelen = sizeof(struct sockaddr_in);
-    msg.msg_iov = &iov;
-    msg.msg_iovlen = 1;
-    msg.msg_control = NULL;
-    msg.msg_controllen = 0;
-    msg.msg_flags = 0;
-    msg.msg_iov->iov_base= data;
-    msg.msg_iov->iov_len = size;
-    
+    nr_segments = 1; count = 1;
+    iov.iov_len = size;
+    iov.iov_base = data;
+
+    iov_iter_init(&(msg.msg_iter), READ, &iov, nr_segments, count);
+
     printk(KERN_INFO "Receving data..\n");
 
     oldfs = get_fs();
     set_fs(KERNEL_DS);
 
-    retval = sock_recvmsg(sock, &msg, size, 0);
+    retval = sock_recvmsg(sock, &msg, 0);
 
     set_fs(oldfs);
 }
