@@ -263,13 +263,11 @@ static int connect(void)
 static void send_data(char* data, int size) {
     struct msghdr msg;
     struct iovec iov;
-    int retval;
+    int retval, nr_segments, count;
     mm_segment_t oldfs;
     
     printk(KERN_INFO "Exchanging data\n");
-
-    int nr_segments = 1;
-    int count = 1;
+    nr_segments = 1; count = 1;
     // msg.msg_name     = 0;
     // msg.msg_namelen  = 0;
     // msg.msg_iov      = &iov;
@@ -277,16 +275,18 @@ static void send_data(char* data, int size) {
     // msg.msg_control  = NULL;
     // msg.msg_controllen = 0;
     // msg.msg_flags    = 0;
-    msg.msg_iov->iov_len = size;
-    msg.msg_iov->iov_base = data;
+    iov.iov_len = size;
+    iov.iov_base = data;
+    //msg.msg_iter.iov->iov_len = size;
+    //msg.msg_iter.iov->iov_base = data;
 
-    iov_iter_init(&(msg.msg_iter), READ, &iov, nr_segments, count)
+    iov_iter_init(&(msg.msg_iter), READ, &iov, nr_segments, count);
 
     printk(KERN_INFO "Sending data..\n");
     oldfs = get_fs();
     set_fs(KERNEL_DS);
 
-    retval = sock_sendmsg(sock, &msg, size);
+    retval = sock_sendmsg(sock, &msg);
 
     set_fs(oldfs);
 }

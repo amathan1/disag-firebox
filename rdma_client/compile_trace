@@ -1,0 +1,98 @@
+make -C /lib/modules/4.4.0-101-generic/build M=/home/arvind/Documents/disag-firebox/rdma_client modules
+make[1]: Entering directory '/usr/src/linux-headers-4.4.0-101-generic'
+  CC [M]  /home/arvind/Documents/disag-firebox/rdma_client/client.o
+In file included from /home/arvind/Documents/disag-firebox/rdma_client/client.c:14:0:
+/home/arvind/Documents/disag-firebox/rdma_client/client.c: In function ‘print_device_attr’:
+/home/arvind/Documents/disag-firebox/rdma_client/client.c:96:24: warning: format ‘%llu’ expects argument of type ‘long long unsigned int’, but argument 11 has type ‘int’ [-Wformat=]
+    LOG_KERN(LOG_INFO, ("fw_ver: %llu\n"
+                        ^
+/home/arvind/Documents/disag-firebox/rdma_client/log.h:18:20: note: in definition of macro ‘LOG_KERN’
+             printk STR; \
+                    ^
+/home/arvind/Documents/disag-firebox/rdma_client/client.c: In function ‘send_data’:
+/home/arvind/Documents/disag-firebox/rdma_client/client.c:273:8: error: ‘struct msghdr’ has no member named ‘msg_iov’
+     msg.msg_iov      = &iov;
+        ^
+/home/arvind/Documents/disag-firebox/rdma_client/client.c:274:8: error: ‘struct msghdr’ has no member named ‘msg_iovlen’
+     msg.msg_iovlen   = 1;
+        ^
+/home/arvind/Documents/disag-firebox/rdma_client/client.c:278:8: error: ‘struct msghdr’ has no member named ‘msg_iov’
+     msg.msg_iov->iov_len = size;
+        ^
+/home/arvind/Documents/disag-firebox/rdma_client/client.c:279:8: error: ‘struct msghdr’ has no member named ‘msg_iov’
+     msg.msg_iov->iov_base = data;
+        ^
+/home/arvind/Documents/disag-firebox/rdma_client/client.c:285:14: error: too many arguments to function ‘sock_sendmsg’
+     retval = sock_sendmsg(sock, &msg, size);
+              ^
+In file included from /home/arvind/Documents/disag-firebox/rdma_client/client.c:5:0:
+include/linux/net.h:219:5: note: declared here
+ int sock_sendmsg(struct socket *sock, struct msghdr *msg);
+     ^
+/home/arvind/Documents/disag-firebox/rdma_client/client.c: In function ‘receive_data’:
+/home/arvind/Documents/disag-firebox/rdma_client/client.c:302:8: error: ‘struct msghdr’ has no member named ‘msg_iov’
+     msg.msg_iov = &iov;
+        ^
+/home/arvind/Documents/disag-firebox/rdma_client/client.c:303:8: error: ‘struct msghdr’ has no member named ‘msg_iovlen’
+     msg.msg_iovlen = 1;
+        ^
+/home/arvind/Documents/disag-firebox/rdma_client/client.c:307:8: error: ‘struct msghdr’ has no member named ‘msg_iov’
+     msg.msg_iov->iov_base= data;
+        ^
+/home/arvind/Documents/disag-firebox/rdma_client/client.c:308:8: error: ‘struct msghdr’ has no member named ‘msg_iov’
+     msg.msg_iov->iov_len = size;
+        ^
+/home/arvind/Documents/disag-firebox/rdma_client/client.c:315:14: error: too many arguments to function ‘sock_recvmsg’
+     retval = sock_recvmsg(sock, &msg, size, 0);
+              ^
+In file included from /home/arvind/Documents/disag-firebox/rdma_client/client.c:5:0:
+include/linux/net.h:220:5: note: declared here
+ int sock_recvmsg(struct socket *sock, struct msghdr *msg, int flags);
+     ^
+/home/arvind/Documents/disag-firebox/rdma_client/client.c: In function ‘post_send_wr’:
+/home/arvind/Documents/disag-firebox/rdma_client/client.c:514:7: error: ‘struct ib_send_wr’ has no member named ‘wr’
+     wr.wr.rdma.remote_addr = s_ctx.rem_vaddr;
+       ^
+/home/arvind/Documents/disag-firebox/rdma_client/client.c:515:7: error: ‘struct ib_send_wr’ has no member named ‘wr’
+     wr.wr.rdma.rkey        = s_ctx.rem_rkey;
+       ^
+/home/arvind/Documents/disag-firebox/rdma_client/client.c: In function ‘add_device’:
+/home/arvind/Documents/disag-firebox/rdma_client/client.c:567:87: warning: passing argument 5 of ‘ib_create_cq’ makes pointer from integer without a cast [-Wint-conversion]
+     s_ctx.send_cq = ib_create_cq(dev, comp_handler_send, cq_event_handler_send, NULL, 10, 0);
+                                                                                       ^
+In file included from /home/arvind/Documents/disag-firebox/rdma_client/client.c:11:0:
+include/rdma/ib_verbs.h:2470:15: note: expected ‘const struct ib_cq_init_attr *’ but argument is of type ‘int’
+ struct ib_cq *ib_create_cq(struct ib_device *device,
+               ^
+/home/arvind/Documents/disag-firebox/rdma_client/client.c:567:21: error: too many arguments to function ‘ib_create_cq’
+     s_ctx.send_cq = ib_create_cq(dev, comp_handler_send, cq_event_handler_send, NULL, 10, 0);
+                     ^
+In file included from /home/arvind/Documents/disag-firebox/rdma_client/client.c:11:0:
+include/rdma/ib_verbs.h:2470:15: note: declared here
+ struct ib_cq *ib_create_cq(struct ib_device *device,
+               ^
+/home/arvind/Documents/disag-firebox/rdma_client/client.c:568:87: warning: passing argument 5 of ‘ib_create_cq’ makes pointer from integer without a cast [-Wint-conversion]
+     s_ctx.recv_cq = ib_create_cq(dev, comp_handler_recv, cq_event_handler_recv, NULL, 10, 0);
+                                                                                       ^
+In file included from /home/arvind/Documents/disag-firebox/rdma_client/client.c:11:0:
+include/rdma/ib_verbs.h:2470:15: note: expected ‘const struct ib_cq_init_attr *’ but argument is of type ‘int’
+ struct ib_cq *ib_create_cq(struct ib_device *device,
+               ^
+/home/arvind/Documents/disag-firebox/rdma_client/client.c:568:21: error: too many arguments to function ‘ib_create_cq’
+     s_ctx.recv_cq = ib_create_cq(dev, comp_handler_recv, cq_event_handler_recv, NULL, 10, 0);
+                     ^
+In file included from /home/arvind/Documents/disag-firebox/rdma_client/client.c:11:0:
+include/rdma/ib_verbs.h:2470:15: note: declared here
+ struct ib_cq *ib_create_cq(struct ib_device *device,
+               ^
+/home/arvind/Documents/disag-firebox/rdma_client/client.c: In function ‘client_module_init’:
+/home/arvind/Documents/disag-firebox/rdma_client/client.c:619:22: warning: assignment from incompatible pointer type [-Wincompatible-pointer-types]
+     my_client.remove = remove_device;
+                      ^
+scripts/Makefile.build:264: recipe for target '/home/arvind/Documents/disag-firebox/rdma_client/client.o' failed
+make[2]: *** [/home/arvind/Documents/disag-firebox/rdma_client/client.o] Error 1
+Makefile:1423: recipe for target '_module_/home/arvind/Documents/disag-firebox/rdma_client' failed
+make[1]: *** [_module_/home/arvind/Documents/disag-firebox/rdma_client] Error 2
+make[1]: Leaving directory '/usr/src/linux-headers-4.4.0-101-generic'
+Makefile:8: recipe for target 'all' failed
+make: *** [all] Error 2
