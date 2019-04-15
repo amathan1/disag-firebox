@@ -1,3 +1,5 @@
+// Document this file to understand what every line is doing
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -11,8 +13,10 @@
 
 #include <sys/wait.h>
 #include <signal.h>
-#include <infiniband/verbs.h>
+#include <infiniband/verbs.h>   // libibverbs
 
+// Checks if the argument is false
+// If it is, it writes to ostream and exits.
 #define CHECK(cond) {\
    if((cond)==0) {\
       puts("Error");\
@@ -20,6 +24,7 @@
    }\
 }
 
+// This one writes the message to string if condition is false
 #define CHECK_MSG(cond, msg) {\
    if((cond)==0) {\
       puts(msg);\
@@ -27,15 +32,18 @@
    }\
 }
 
+// TCP Port number of the server
 #define MYPORT 18515
 
-time_t timer;
+time_t timer;   // Redundant variable. You can use it, though
 int sockfd, new_fd; // listen on sock_fd, new connection on new_fd
 struct sockaddr_in my_addr; // my address information
 struct sockaddr_in their_addr; // connector.s address information
 int sin_size;
 int yes=1;
 
+
+// Structure to store current context information
 struct context {
    struct ibv_context* context;
    struct ibv_pd* pd;
@@ -62,7 +70,9 @@ struct context {
   
    unsigned long rdma_mem_size; 
 } s_ctx;
+// A single instance of this struct is used in the entire program?
 
+// Get the size of RDMA buffer?
 static 
 void handshake_get_memsize(void)
 {
@@ -75,6 +85,7 @@ void handshake_get_memsize(void)
     CHECK_MSG(s_ctx.rdma_mem_size > 0, "Error: received wrong mem size");
 }
 
+// Exchange bootstrap data using TCP sockets
 static
 void exchange_bootstrap_data(void* virtual_address, uint32_t rkey, int qpn, int psn, int lid)
 {
@@ -97,19 +108,21 @@ void exchange_bootstrap_data(void* virtual_address, uint32_t rkey, int qpn, int 
 
     retval = recv(new_fd, recv_buffer, 1000, 0);
     CHECK(retval > 0);
-    
+
     printf("received: %s\n", recv_buffer);
 
     sscanf(recv_buffer, "%016Lx:%u:%x:%x:%x", &s_ctx.rem_vaddr, 
            &s_ctx.rem_rkey, &s_ctx.rem_qpn, &s_ctx.rem_psn, &s_ctx.rem_lid);
 }
 
+// Tries to see if port 1 on infiniband is usable or not
 int get_port_data()
 {
     struct ibv_port_attr attr;
-    int retval = ibv_query_port(s_ctx.context,1,&attr);
+    // We're trying to query port 1
+    int retval = ibv_query_port(s_ctx.context, 1, &attr);
     CHECK(retval == 0);
-    CHECK_MSG(attr.active_mtu == 5, "!!!!!!!!Wrong device!!!!!!");
+    CHECK_MSG(attr.active_mtu == IBV_MTU_4096, "!!!!!!!!Wrong device!!!!!!");
 
     s_ctx.lid = attr.lid;
     s_ctx.qpn = s_ctx.qp->qp_num;
@@ -121,154 +134,168 @@ int get_port_data()
     s_ctx.local_rkey = s_ctx.mr->rkey;
     s_ctx.active_mtu = attr.active_mtu;
 
+    // Gets the Global Identifier's index 0, which is a unique Ipv6 address
+    // s_ctx.gid is a union containing that information
     ibv_query_gid(s_ctx.context, 1, 0, &s_ctx.gid);
 
     return 0;
 }
 
+// User defined handshake
 void handshake()
 {
     exchange_bootstrap_data(s_ctx.rdma_buffer, s_ctx.local_rkey, s_ctx.qpn, s_ctx.psn, s_ctx.lid);
 }
 
+// 
 int setup_rdma_2()
 {
-   puts("Moving to RTR");
-   printf("mtu: %d qpn: %d psn: %d lid: %d\n",
-          s_ctx.active_mtu, s_ctx.rem_qpn, s_ctx.rem_psn, s_ctx.rem_lid);
+    puts("Moving to RTR");
+    printf("mtu: %d qpn: %d psn: %d lid: %d\n",
+            s_ctx.active_mtu, s_ctx.rem_qpn, s_ctx.rem_psn, s_ctx.rem_lid);
 
-   struct ibv_qp_attr attr;
-   memset(&attr, 0, sizeof(attr));
-   attr.qp_state = IBV_QPS_RTR;
-   attr.path_mtu = s_ctx.active_mtu;
-   attr.dest_qp_num = s_ctx.rem_qpn;
-   attr.rq_psn	    = s_ctx.rem_psn;
-   attr.max_dest_rd_atomic = 1;
-   attr.min_rnr_timer = 12;
-   attr.ah_attr.is_global = 0;
-   attr.ah_attr.dlid = s_ctx.rem_lid;
-   attr.ah_attr.sl = 0;
-   attr.ah_attr.src_path_bits = 0;
-   attr.ah_attr.port_num = 1;
+    struct ibv_qp_attr attr;
+    memset(&attr, 0, sizeof(attr));
+    attr.qp_state = IBV_QPS_RTR;
+    attr.path_mtu = s_ctx.active_mtu;
+    attr.dest_qp_num = s_ctx.rem_qpn;
+    attr.rq_psn	    = s_ctx.rem_psn;
+    attr.max_dest_rd_atomic = 1;
+    attr.min_rnr_timer = 12;
+    attr.ah_attr.is_global = 0;
+    attr.ah_attr.dlid = s_ctx.rem_lid;
+    attr.ah_attr.sl = 0;
+    attr.ah_attr.src_path_bits = 0;
+    attr.ah_attr.port_num = 1;
 
-   CHECK(ibv_modify_qp(s_ctx.qp, &attr,
-			   IBV_QP_STATE              |
-			   IBV_QP_AV                 |
-			   IBV_QP_PATH_MTU           |
-			   IBV_QP_DEST_QPN           |
-			   IBV_QP_RQ_PSN             |
-			   IBV_QP_MAX_DEST_RD_ATOMIC |
-			   IBV_QP_MIN_RNR_TIMER) == 0);
+    // Change QP state to ready-to-receive
+    CHECK(ibv_modify_qp(s_ctx.qp, &attr,
+                IBV_QP_STATE              |
+                IBV_QP_AV                 |
+                IBV_QP_PATH_MTU           |
+                IBV_QP_DEST_QPN           |
+                IBV_QP_RQ_PSN             |
+                IBV_QP_MAX_DEST_RD_ATOMIC |
+                IBV_QP_MIN_RNR_TIMER) == 0);
 
-   puts("Moving to RTS");
-   memset(&attr, 0, sizeof(attr));
+    puts("Moving to RTS");
+    memset(&attr, 0, sizeof(attr));
 
-   attr.qp_state = IBV_QPS_RTS;
-   attr.sq_psn	 = s_ctx.psn;
-   attr.timeout	 = 14;
-   attr.retry_cnt = 7;
-   attr.rnr_retry = 7; /* infinite */
-   attr.max_rd_atomic  = 1;
+    attr.qp_state = IBV_QPS_RTS;
+    attr.sq_psn	 = s_ctx.psn;
+    attr.timeout	 = 14;
+    attr.retry_cnt = 7;
+    attr.rnr_retry = 7; /* infinite */
+    attr.max_rd_atomic  = 1;
 
-   CHECK (ibv_modify_qp(s_ctx.qp, &attr,
-			   IBV_QP_STATE              |
-			   IBV_QP_TIMEOUT            |
-			   IBV_QP_RETRY_CNT          |
-			   IBV_QP_RNR_RETRY          |
-			   IBV_QP_SQ_PSN             |
-			   IBV_QP_MAX_QP_RD_ATOMIC) == 0);
+    CHECK (ibv_modify_qp(s_ctx.qp, &attr,
+                IBV_QP_STATE              |
+                IBV_QP_TIMEOUT            |
+                IBV_QP_RETRY_CNT          |
+                IBV_QP_RNR_RETRY          |
+                IBV_QP_SQ_PSN             |
+                IBV_QP_MAX_QP_RD_ATOMIC) == 0);
 
-   puts("Moved to RTS");
+    puts("Moved to RTS");
 
-#define DO_RECEIVE_WR
-#ifdef DO_RECEIVE_WR
-   puts("Building receive WR");
+    #define DO_RECEIVE_WR
+    #ifdef DO_RECEIVE_WR
+    puts("Building receive WR");
+  
+    struct ibv_sge sg;
+    struct ibv_recv_wr wr;
+    struct ibv_recv_wr *bad_wr;
 
-   struct ibv_sge sg;
-   struct ibv_recv_wr wr;
-   struct ibv_recv_wr *bad_wr;
+    memset(&sg, 0, sizeof(sg));
+    sg.addr	  = (uintptr_t)s_ctx.rdma_buffer;
+    sg.length      = s_ctx.rdma_mem_size;
+    sg.lkey	  = s_ctx.mr->lkey;
 
-   memset(&sg, 0, sizeof(sg));
-   sg.addr	  = (uintptr_t)s_ctx.rdma_buffer;
-   sg.length      = s_ctx.rdma_mem_size;
-   sg.lkey	  = s_ctx.mr->lkey;
+    memset(&wr, 0, sizeof(wr));
+    wr.wr_id      = 0;
+    wr.sg_list    = &sg;
+    wr.num_sge    = 1;
 
-   memset(&wr, 0, sizeof(wr));
-   wr.wr_id      = 0;
-   wr.sg_list    = &sg;
-   wr.num_sge    = 1;
-
-   puts("Ibv_post_recv");
-   if (ibv_post_recv(s_ctx.qp, &wr, &bad_wr)) {
-	   fprintf(stderr, "Error, ibv_post_recv() failed\n");
-	   return -1;
+    puts("Ibv_post_recv");
+    if (ibv_post_recv(s_ctx.qp, &wr, &bad_wr)) {
+        fprintf(stderr, "Error, ibv_post_recv() failed\n");
+        return -1;
    }
 #endif
 }
 
 int setup_rdma_1()
 {
-   struct ibv_device **dev_list;
-   struct ibv_device *ibv_dev;
+    struct ibv_device **dev_list;
+    struct ibv_device *ibv_dev;
 
-   int num_devices;
-   dev_list = ibv_get_device_list(&num_devices);
+    int num_devices;
+    dev_list = ibv_get_device_list(&num_devices);
 
-   ibv_dev = dev_list[0];
-   CHECK_MSG(ibv_dev != NULL, "Error getting device");
+    ibv_dev = dev_list[0];
+    CHECK_MSG(ibv_dev != NULL, "Error getting device");
 
-   s_ctx.context = ibv_open_device(ibv_dev);
-   CHECK_MSG(s_ctx.context != NULL, "Error getting cntext");
+    // Provides the hardware as a context. Do ops directly on the hw
+    s_ctx.context = ibv_open_device(ibv_dev);
+    CHECK_MSG(s_ctx.context != NULL, "Error getting cntext");
 
-   s_ctx.pd = ibv_alloc_pd(s_ctx.context);
-   CHECK_MSG(s_ctx.pd != 0, "Error gettign pd");
+    // Allocate a protection domain, which decides which memory regions 
+    // can be accessed by which queue pairs 
+    s_ctx.pd = ibv_alloc_pd(s_ctx.context);
+    CHECK_MSG(s_ctx.pd != 0, "Error gettign pd");
 
-   s_ctx.rdma_buffer = (char*)malloc(s_ctx.rdma_mem_size);
-   strcpy(s_ctx.rdma_buffer, "AHOY!");
-   CHECK_MSG(s_ctx.rdma_buffer != 0, "Error getting buf");
-   s_ctx.mr = ibv_reg_mr(s_ctx.pd, s_ctx.rdma_buffer, s_ctx.rdma_mem_size, 
+    // Allocate a buffer for rdma ops. Same buffer is read and written to
+    // by the client.
+    s_ctx.rdma_buffer = (char*)malloc(s_ctx.rdma_mem_size);
+    strcpy(s_ctx.rdma_buffer, "AHOY!");
+    CHECK_MSG(s_ctx.rdma_buffer != 0, "Error getting buf");
+    // Register this memory region for local write, remote write and remote read, 
+    // with the same protection domain?
+    s_ctx.mr = ibv_reg_mr(s_ctx.pd, s_ctx.rdma_buffer, s_ctx.rdma_mem_size, 
                             IBV_ACCESS_LOCAL_WRITE | 
                             IBV_ACCESS_REMOTE_WRITE | 
                             IBV_ACCESS_REMOTE_READ);
-   CHECK_MSG(s_ctx.mr != NULL, "Error getting mr");
+    CHECK_MSG(s_ctx.mr != NULL, "Error getting mr");
 
-   printf("Created my. rkey: %u\n", s_ctx.mr->rkey);
-   
-   // create channel
-   s_ctx.event_channel = ibv_create_comp_channel(s_ctx.context);
-   
-   s_ctx.send_cq = ibv_create_cq(s_ctx.context, 100, s_ctx.event_channel, 0, 0); 
-   CHECK_MSG(s_ctx.send_cq != 0, "Error getting cq");
-   s_ctx.recv_cq = ibv_create_cq(s_ctx.context, 100, s_ctx.event_channel, 0, 0); 
-   CHECK_MSG(s_ctx.recv_cq != 0, "Error getting recv cq");
+    printf("Created my. rkey: %u\n", s_ctx.mr->rkey);
 
-   struct ibv_qp_init_attr qp_attr;
-   memset(&qp_attr, 0, sizeof(struct ibv_qp_init_attr));
-   qp_attr.send_cq = s_ctx.send_cq;
-   qp_attr.recv_cq = s_ctx.recv_cq;
-   qp_attr.cap.max_send_wr  = 10;
-   qp_attr.cap.max_recv_wr  = 10;
-   qp_attr.cap.max_send_sge = 1;
-   qp_attr.cap.max_recv_sge = 1;
-   qp_attr.cap.max_inline_data = 0;
-   qp_attr.qp_type = IBV_QPT_RC;
+    // create channel
+    s_ctx.event_channel = ibv_create_comp_channel(s_ctx.context);
 
-   s_ctx.qp = ibv_create_qp(s_ctx.pd, &qp_attr);
-   CHECK_MSG(s_ctx.qp != NULL, "Error getting qp");
+    // Create completion queue for sending and receiving
+    s_ctx.send_cq = ibv_create_cq(s_ctx.context, 100, s_ctx.event_channel, 0, 0); 
+    CHECK_MSG(s_ctx.send_cq != 0, "Error getting cq");
+    s_ctx.recv_cq = ibv_create_cq(s_ctx.context, 100, s_ctx.event_channel, 0, 0); 
+    CHECK_MSG(s_ctx.recv_cq != 0, "Error getting recv cq");
 
-   puts("Moving QP to init");
+    struct ibv_qp_init_attr qp_attr;
+    memset(&qp_attr, 0, sizeof(struct ibv_qp_init_attr));
+    qp_attr.send_cq = s_ctx.send_cq;
+    qp_attr.recv_cq = s_ctx.recv_cq;
+    qp_attr.cap.max_send_wr  = 10;
+    qp_attr.cap.max_recv_wr  = 10;
+    qp_attr.cap.max_send_sge = 1;
+    qp_attr.cap.max_recv_sge = 1;
+    qp_attr.cap.max_inline_data = 0;
+    qp_attr.qp_type = IBV_QPT_RC;
 
-   struct ibv_qp_attr attr;
-   memset(&attr, 0, sizeof(attr));
-    
-   attr.qp_state        = IBV_QPS_INIT;
-   attr.pkey_index      = 0;
-   attr.port_num        = 1;
-   attr.qp_access_flags = IBV_ACCESS_REMOTE_WRITE  | IBV_ACCESS_REMOTE_READ|IBV_ACCESS_REMOTE_ATOMIC ;//0;
+    s_ctx.qp = ibv_create_qp(s_ctx.pd, &qp_attr);
+    CHECK_MSG(s_ctx.qp != NULL, "Error getting qp");
 
-   int flags = IBV_QP_STATE | IBV_QP_PKEY_INDEX | IBV_QP_PORT | IBV_QP_ACCESS_FLAGS;
-   int retval = ibv_modify_qp(s_ctx.qp, &attr, flags);
-   CHECK_MSG(retval == 0, "Error modifying qp");
+    puts("Moving QP to init");
+
+    // Initialize the queue pair 
+    struct ibv_qp_attr attr;
+    memset(&attr, 0, sizeof(attr));
+
+    attr.qp_state        = IBV_QPS_INIT;
+    attr.pkey_index      = 0;
+    attr.port_num        = 1;
+    attr.qp_access_flags = IBV_ACCESS_REMOTE_WRITE  | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_ATOMIC;//0;
+
+    int flags = IBV_QP_STATE | IBV_QP_PKEY_INDEX | IBV_QP_PORT | IBV_QP_ACCESS_FLAGS;
+    int retval = ibv_modify_qp(s_ctx.qp, &attr, flags);
+    CHECK_MSG(retval == 0, "Error modifying qp");
 }
 
 void wait_for_tcp_connection()
@@ -283,6 +310,8 @@ void wait_for_tcp_connection()
         perror("setsockopt");
         exit(1);
     }
+
+    // Set host ip struct
     my_addr.sin_family = AF_INET; // host byte order
     my_addr.sin_port = htons(MYPORT); // short, network byte order
     my_addr.sin_addr.s_addr = INADDR_ANY; // automatically fill with my IP
@@ -298,9 +327,11 @@ void wait_for_tcp_connection()
         perror("listen");
         exit(1);
     }
-    
+
+    // Until here, we're creating a TCP socket and listening to it.
+
     sin_size = sizeof(struct sockaddr_in);
-    if ((new_fd = accept(sockfd, (struct sockaddr *)&their_addr,&sin_size)) == -1)
+    if ((new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size)) == -1)
     {
 	    //perror("accept");
 	    exit(-1);
@@ -311,13 +342,16 @@ void wait_for_tcp_connection()
 
 int main(void)
 {
-    timer = time(NULL);
+    timer = time(NULL); // Useless?
 
+    // Create a TCP connection, bind & listen to port, accept the connection and set "new_fd"
     wait_for_tcp_connection();
     
+    // User defined handshake. Receive the size of RDMA buffer
     puts("Handshaking. Getting mem_size");
     handshake_get_memsize();
 
+    // 
     setup_rdma_1();
     get_port_data();
     
