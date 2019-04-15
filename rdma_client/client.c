@@ -102,7 +102,7 @@ void print_device_attr(struct ib_device_attr dev_attr)
            "hw_ver: %d\n"
            "max_qp: %d\n"
            "max_qp_wr: %d\n"
-           "device_cap_flags: %llu\n"
+           "device_cap_flags: %d\n"
            "max_sge: %d\n"
            "max_sge_rd: %d\n"
            "max_cq: %d\n"
@@ -268,15 +268,19 @@ static void send_data(char* data, int size) {
     
     printk(KERN_INFO "Exchanging data\n");
 
-    msg.msg_name     = 0;
-    msg.msg_namelen  = 0;
-    msg.msg_iov      = &iov;
-    msg.msg_iovlen   = 1;
-    msg.msg_control  = NULL;
-    msg.msg_controllen = 0;
-    msg.msg_flags    = 0;
+    int nr_segments = 1;
+    int count = 1;
+    // msg.msg_name     = 0;
+    // msg.msg_namelen  = 0;
+    // msg.msg_iov      = &iov;
+    // msg.msg_iovlen   = 1;
+    // msg.msg_control  = NULL;
+    // msg.msg_controllen = 0;
+    // msg.msg_flags    = 0;
     msg.msg_iov->iov_len = size;
     msg.msg_iov->iov_base = data;
+
+    iov_iter_init(&(msg.msg_iter), READ, &iov, nr_segments, count)
 
     printk(KERN_INFO "Sending data..\n");
     oldfs = get_fs();
